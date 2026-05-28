@@ -5,5 +5,5 @@ def test_health(client):
     assert response.json() == {
         "status": "ok",
         "engine": "mermaid",
-        "engineVersion": "11.11.0",
+        "engineVersion": "11.15.0",
     }

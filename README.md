@@ -2,6 +2,28 @@
 
 FastAPI service that validates Mermaid syntax and renders diagrams to SVG/PNG/JPEG.
 
+## Current State
+
+The MVP implementation is in place and running with:
+
+- FastAPI app with lifecycle-managed Playwright browser instance.
+- Implemented endpoints: `GET /health`, `POST /validate`, `POST /render`.
+- Pydantic request validation for format/theme/size/scale limits and code size cap.
+- Mermaid render pipeline using the vendored Mermaid ESM module under `vendor/mermaid/dist`.
+- Error mapping for parse failures and render timeout responses.
+- Dockerfile and Mermaid install script (`scripts/install_mermaid.sh`) with pinned Mermaid version support.
+
+Current automated test status:
+
+- `13` tests passing.
+- Unit coverage for schema defaults/constraints and background/transparency logic.
+- Endpoint-level tests for success/error responses on health, validate, and render routes.
+
+Notes:
+
+- Tests currently stub the renderer at route-test level to keep API behavior checks deterministic.
+- Full browser rendering behavior is implemented in `src/render/mermaid_renderer.py`; adding dedicated end-to-end Playwright-backed tests is the next recommended step.
+
 ## API Endpoints
 
 - `GET /health`
@@ -50,6 +72,8 @@ npm test
 
 ## Docker
 
+Rebuild the image after changing `MERMAID_VERSION` or running `scripts/install_mermaid.sh`; the container includes its own copy of `vendor/mermaid/dist`.
+
 Build:
 
 ```sh
@@ -77,6 +101,9 @@ Use `--no-allow-unauthenticated` if you want IAM-protected invocations.
 
 ## Curl Examples
 
+For a larger set of smoke-test examples across Mermaid diagram types, see
+[docs/curl-examples.md](docs/curl-examples.md).
+
 Validate:
 
 ```sh
@@ -102,4 +129,3 @@ curl -s http://localhost:3000/render \
   -d '{"code":"flowchart TD\nA-->B","format":"svg","transparent":true}' \
   --output diagram.svg
 ```
-

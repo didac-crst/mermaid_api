@@ -4,7 +4,7 @@
 
 Build a small HTTP API that receives Mermaid syntax text, renders it with the vendored Mermaid engine, and returns an image.
 
-The repository currently contains Mermaid `11.11.0` under `vendor/mermaid/`. Use that package as the rendering engine source unless there is a strong reason to replace it with the npm package during implementation.
+The repository can contain a local Mermaid runtime under `vendor/mermaid/` for development, but the preferred setup is to install a pinned Mermaid version during setup/build.
 
 ## Deployment Target
 
@@ -84,7 +84,7 @@ Recommended CDN format:
 
 ```html
 <script type="module">
-  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.11.0/dist/mermaid.esm.min.mjs";
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.esm.min.mjs";
 </script>
 ```
 
@@ -123,7 +123,7 @@ Preferred repository setup: do not commit the full Mermaid distribution by defau
 
 Instead, keep a small script that downloads or installs Mermaid at build time:
 
-- Option A: use npm during the Docker build and install a pinned version, for example `mermaid@11.11.0`.
+- Option A: use npm during the Docker build and install a pinned version, for example `mermaid@11.15.0`.
 - Option B: keep `MERMAID_VERSION` as a build argument, defaulting to a pinned version.
 - Option C: allow `MERMAID_VERSION=latest` only for manual experiments, not production builds.
 
@@ -151,7 +151,7 @@ Returns:
 {
   "status": "ok",
   "engine": "mermaid",
-  "engineVersion": "11.11.0"
+  "engineVersion": "11.15.0"
 }
 ```
 

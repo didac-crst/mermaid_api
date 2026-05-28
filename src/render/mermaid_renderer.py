@@ -11,7 +11,7 @@ from src.response.errors import MermaidParseError, MermaidRenderError, MermaidRe
 from src.validation.schemas import RenderRequest
 
 DEFAULT_TIMEOUT_MS = 10_000
-ENGINE_VERSION = "11.11.0"
+ENGINE_VERSION = "11.15.0"
 
 
 class MermaidRenderer:

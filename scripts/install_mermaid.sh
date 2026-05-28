@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-MERMAID_VERSION="${MERMAID_VERSION:-11.11.0}"
+MERMAID_VERSION="${MERMAID_VERSION:-11.15.0}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TARGET_DIR="${ROOT_DIR}/vendor/mermaid"
 
