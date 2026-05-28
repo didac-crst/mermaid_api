@@ -8,6 +8,7 @@ router = APIRouter()
 
 @router.post("/validate")
 async def validate(payload: ValidateRequest, request: Request) -> dict:
+    """Check Mermaid syntax and return diagram metadata without rendering."""
     result = await request.app.state.renderer.validate(payload.code)
     if result.get("valid"):
         return {"valid": True, "diagramType": result.get("diagramType", "unknown")}

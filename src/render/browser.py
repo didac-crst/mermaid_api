@@ -1,3 +1,5 @@
+"""Shared Playwright Chromium lifecycle for render requests."""
+
 from __future__ import annotations
 
 import asyncio
@@ -6,6 +8,8 @@ from playwright.async_api import Browser, Playwright, async_playwright
 
 
 class BrowserManager:
+    """Lazy-start a single Chromium browser reused across requests."""
+
     def __init__(self) -> None:
         self._playwright: Playwright | None = None
         self._browser: Browser | None = None

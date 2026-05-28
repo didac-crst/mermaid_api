@@ -1,3 +1,5 @@
+"""FastAPI application entrypoint for the Mermaid Render API."""
+
 from __future__ import annotations
 
 from contextlib import asynccontextmanager

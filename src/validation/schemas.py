@@ -1,3 +1,5 @@
+"""Pydantic request models for validate and render endpoints."""
+
 from __future__ import annotations
 
 from typing import Literal

@@ -247,6 +247,7 @@ Error responses are JSON:
 6. If requested format is raster, mount the SVG into a Playwright page and screenshot the SVG bounding box.
 7. For `jpg/jpeg`, always use an opaque background because JPEG does not support transparency.
 8. For `png` with `transparent=true`, preserve transparency.
+9. Reject Mermaid "error diagram" SVG output (`.error-icon` / `.error-text`) with `400` JSON instead of returning it as a successful image.
 
 ## Render Page Design
 
@@ -254,7 +255,7 @@ Use a single reusable Chromium browser instance and create isolated pages or bro
 
 The page should:
 
-- Import Mermaid from `vendor/mermaid/dist/mermaid.esm.mjs`.
+- Inject Mermaid from `vendor/mermaid/dist/mermaid.min.js` via Playwright `add_script_tag` (more reliable in Docker than ESM `file://` imports).
 - Call `mermaid.initialize({ startOnLoad: false, securityLevel: "strict", theme })`.
 - Call `mermaid.parse(code)` before rendering.
 - Call `mermaid.render(id, code)`.

@@ -1,3 +1,5 @@
+"""HTTP error types returned as JSON ``detail.error`` payloads."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -7,6 +9,8 @@ from fastapi import HTTPException
 
 @dataclass
 class MermaidApiError(Exception):
+    """Base API error with stable ``code`` and HTTP status."""
+
     code: str
     message: str
     status_code: int

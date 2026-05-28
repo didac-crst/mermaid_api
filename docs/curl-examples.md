@@ -4,6 +4,112 @@ These examples embed the Mermaid text directly in the JSON payload.
 
 They use Bash-style `$'...'` strings so `\n` works cleanly. For automation tests, prefer JSON payload files with `--data-binary @payload.json`.
 
+## Error handling with curl
+
+`POST /render` returns **either** a binary image **or** a JSON error. It never returns both in one response.
+
+| HTTP status | `Content-Type` | Body |
+|-------------|----------------|------|
+| `200` | `image/svg+xml`, `image/png`, or `image/jpeg` | Diagram bytes |
+| `400` | `application/json` | `{ "detail": { "error": { "code": "MERMAID_PARSE_ERROR", "message": "..." } } }` |
+| `422` | `application/json` | Pydantic validation error (invalid `format`, `scale`, etc.) |
+| `504` | `application/json` | `{ "detail": { "error": { "code": "MERMAID_RENDER_TIMEOUT", ... } } }` |
+
+### `curl --output` does not mean success
+
+`--output diagram.png` writes the response body to that path **even when the status is `400`**. A failed render can produce a small JSON file named `diagram.png`. Always check the HTTP status (or use `curl -f`) before treating the file as an image.
+
+Verify a saved file when unsure:
+
+```sh
+file diagram.png
+# PNG image data, ...        -> success
+# JSON data                  -> error body saved under a .png name
+```
+
+### Success responses do not print `HTTP 200` by default
+
+`curl -s` only prints the **body**. On success that body is binary image data, not JSON, so the terminal often looks empty. Errors look louder because the body is JSON text.
+
+To see the status line or code on success:
+
+```sh
+curl -sS -o diagram.png -w "HTTP %{http_code}\n" ...
+# or
+curl -sS -D - -o diagram.png ...
+```
+
+### Option A: fail on HTTP errors (`curl -f`)
+
+`-f` makes curl exit with a non-zero status on `4xx`/`5xx` and **does not** write `--output` on failure (the error body goes to stderr unless you redirect it).
+
+```sh
+curl -fS http://localhost:3000/render \
+  -H "content-type: application/json" \
+  -d '{"code":"flowchart TD\nA-->B","format":"png"}' \
+  --output diagram.png
+
+echo "Saved diagram.png ($(file -b diagram.png))"
+```
+
+On error, curl prints nothing useful to `diagram.png` and exits non-zero; handle that in your script:
+
+```sh
+if ! curl -fS http://localhost:3000/render \
+  -H "content-type: application/json" \
+  -d @bad-payload.json \
+  --output diagram.png 2>render-error.json; then
+  echo "Render failed:"
+  cat render-error.json
+  exit 1
+fi
+```
+
+### Option B: capture the status code explicitly
+
+Use a temp body file and branch on `%{http_code}`:
+
+```sh
+body="$(mktemp)"
+http_code="$(curl -sS -o "$body" -w "%{http_code}" \
+  http://localhost:3000/render \
+  -H "content-type: application/json" \
+  -d @payload.json)"
+
+if [ "$http_code" = "200" ]; then
+  mv "$body" diagram.png
+  echo "OK: $(file -b diagram.png)"
+else
+  echo "HTTP $http_code"
+  cat "$body"
+  rm -f "$body"
+  exit 1
+fi
+```
+
+### Option C: validate first, then render
+
+`POST /validate` always returns JSON. Use it when you want structured errors before requesting an image:
+
+```sh
+curl -s http://localhost:3000/validate \
+  -H "content-type: application/json" \
+  -d '{"code":"ishikawa-beta\n    Root cause\n    Category\n        Item"}' | jq .
+
+# If "valid": true, call /render with the same code (using -f or status check above).
+```
+
+### Parse error JSON with `jq`
+
+```sh
+curl -s http://localhost:3000/render \
+  -H "content-type: application/json" \
+  -d '{"code":"not valid mermaid","format":"png"}' \
+| jq -r '.detail.error | "\(.code): \(.message)"'
+```
+
+The diagram examples below use `curl -s` for brevity. In scripts and CI, prefer **`curl -fS`** or **Option B** so errors are not saved as `.png` / `.svg` files.
+
 ## 1. Flowchart: Render Pipeline as SVG
 
 ```sh
@@ -51,7 +157,7 @@ curl -s http://localhost:3000/render \
 
 ## 4. Ishikawa / Fishbone as PNG
 
-Requires Mermaid `v11.12.3+`. The diagram type is `ishikawa-beta`.
+Requires Mermaid `11.15.0` (pinned in this repo). The diagram type is `ishikawa-beta`.
 
 ```sh
 curl -s http://localhost:3000/render \
@@ -177,26 +283,64 @@ curl -s http://localhost:3000/render \
 
 ## 12. Invalid Mermaid Parse Error Test
 
-This should not create a valid image. It should return the mapped parse error.
+This should return `400` JSON with `MERMAID_PARSE_ERROR`, not an image file.
 
 ```sh
-curl -s http://localhost:3000/render \
+curl -sS http://localhost:3000/render \
   -H "content-type: application/json" \
   -d $'{
     "code": "flowchart TD\\n    A[Start --> B[Missing closing bracket]",
     "format": "svg",
     "theme": "default",
     "transparent": true
-  }'
+  }' \
+| jq .
 ```
+
+Expected shape:
+
+```json
+{
+  "detail": {
+    "error": {
+      "code": "MERMAID_PARSE_ERROR",
+      "message": "..."
+    }
+  }
+}
+```
+
+Do **not** pipe this directly to `--output diagram.svg` without checking status; curl would save the JSON into a file named like an image.
+
+## 13. Wrong Diagram Type (typo) — JSON saved as `.png`
+
+A common mistake is a typo in the first line (e.g. `ishiFLOWCHART-beta` instead of `ishikawa-beta`). The API correctly returns `400` JSON, but `curl --output file.png` still writes that JSON to disk:
+
+```sh
+# Wrong diagram header on purpose
+curl -sS -o ishikawa_late_response2.png -w "HTTP %{http_code}\n" \
+  http://localhost:3000/render \
+  -H "content-type: application/json" \
+  -d $'{
+    "code": "ishiFLOWCHART-beta\\n    Late Mermaid Render Response\\n    People\\n        Unclear ownership",
+    "format": "png"
+  }'
+
+file ishikawa_late_response2.png
+# JSON data   <- not a PNG; fix the code string and use curl -f or check HTTP status
+```
+
+Correct header for the Ishikawa example: `ishikawa-beta` (see section 4).
 
 ## Payload File Pattern
 
 Inline JSON is useful for manual smoke testing, but payload files are easier to maintain for automation:
 
 ```sh
-curl -s http://localhost:3000/render \
+curl -fS http://localhost:3000/render \
   -H "content-type: application/json" \
   --data-binary @payload.json \
   --output diagram.svg
 ```
+
+If the render fails, `curl -f` exits non-zero and does not leave a fake `diagram.svg` containing JSON.
