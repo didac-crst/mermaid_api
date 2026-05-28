@@ -12,9 +12,9 @@ from src.routes.render import router as render_router
 from src.routes.validate import router as validate_router
 
 
-def _resolve_mermaid_module_path() -> Path:
+def _resolve_mermaid_script_path() -> Path:
     root = Path(__file__).resolve().parents[1]
-    return root / "vendor" / "mermaid" / "dist" / "mermaid.esm.mjs"
+    return root / "vendor" / "mermaid" / "dist" / "mermaid.min.js"
 
 
 @asynccontextmanager
@@ -22,7 +22,7 @@ async def lifespan(app: FastAPI):
     manager = BrowserManager()
     renderer = MermaidRenderer(
         browser_manager=manager,
-        mermaid_module_path=_resolve_mermaid_module_path(),
+        mermaid_script_path=_resolve_mermaid_script_path(),
     )
     app.state.browser_manager = manager
     app.state.renderer = renderer

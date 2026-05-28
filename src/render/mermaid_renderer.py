@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import asyncio
-import json
 from pathlib import Path
 
 from playwright.async_api import Error as PlaywrightError
+from playwright.async_api import Page
 
 from src.render.browser import BrowserManager
 from src.response.errors import MermaidParseError, MermaidRenderError, MermaidRenderTimeoutError
@@ -15,9 +15,9 @@ ENGINE_VERSION = "11.11.0"
 
 
 class MermaidRenderer:
-    def __init__(self, browser_manager: BrowserManager, mermaid_module_path: Path, timeout_ms: int = DEFAULT_TIMEOUT_MS) -> None:
+    def __init__(self, browser_manager: BrowserManager, mermaid_script_path: Path, timeout_ms: int = DEFAULT_TIMEOUT_MS) -> None:
         self._browser_manager = browser_manager
-        self._mermaid_module_path = mermaid_module_path
+        self._mermaid_script_path = mermaid_script_path
         self._timeout_ms = timeout_ms
 
     async def validate(self, code: str, theme: str = "default") -> dict[str, str]:
@@ -25,8 +25,7 @@ class MermaidRenderer:
         context = await browser.new_context()
         page = await context.new_page()
         try:
-            await page.set_content(self._render_html(theme))
-            await page.wait_for_function("window.__mermaidReady === true", timeout=self._timeout_ms)
+            await self._prepare_page(page=page, theme=theme)
             return await page.evaluate(
                 """
                 async ({ code }) => {
@@ -60,8 +59,7 @@ class MermaidRenderer:
         page = await context.new_page()
 
         try:
-            await page.set_content(self._render_html(request.theme))
-            await page.wait_for_function("window.__mermaidReady === true", timeout=self._timeout_ms)
+            await self._prepare_page(page=page, theme=request.theme)
 
             parsed = await page.evaluate(
                 """
@@ -115,23 +113,31 @@ class MermaidRenderer:
         finally:
             await context.close()
 
-    def _render_html(self, theme: str) -> str:
-        module_url = self._mermaid_module_path.resolve().as_uri()
-        return f"""
+    async def _prepare_page(self, page: Page, theme: str) -> None:
+        await page.set_content(self._render_html())
+        await page.add_script_tag(path=str(self._mermaid_script_path.resolve()))
+        await page.evaluate(
+            """
+            ({ theme }) => {
+              mermaid.initialize({
+                startOnLoad: false,
+                securityLevel: "strict",
+                theme
+              });
+              window.__mermaid = mermaid;
+              window.__mermaidReady = true;
+            }
+            """,
+            {"theme": theme},
+        )
+        await page.wait_for_function("window.__mermaidReady === true", timeout=self._timeout_ms)
+
+    def _render_html(self) -> str:
+        return """
 <!doctype html>
 <html>
   <body style="margin:0;padding:0;">
     <div id="diagram"></div>
-    <script type="module">
-      import mermaid from "{module_url}";
-      mermaid.initialize({{
-        startOnLoad: false,
-        securityLevel: "strict",
-        theme: {json.dumps(theme)}
-      }});
-      window.__mermaid = mermaid;
-      window.__mermaidReady = true;
-    </script>
   </body>
 </html>
 """
