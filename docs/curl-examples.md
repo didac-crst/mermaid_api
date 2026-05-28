@@ -1,19 +1,35 @@
-# Curl Examples
+<div align="center">
 
-These examples embed the Mermaid text directly in the JSON payload.
+# Curl Examples Cookbook
 
-They use Bash-style `$'...'` strings so `\n` works cleanly. For automation tests, prefer JSON payload files with `--data-binary @payload.json`.
+**Copy-paste recipes** for `POST /render` and `POST /validate` on `localhost:3000`.
+
+<br/>
+
+![Mermaid](https://img.shields.io/badge/mermaid-11.15.0-FF3670)
+![API](https://img.shields.io/badge/API-localhost:3000-009688)
+![curl](https://img.shields.io/badge/tool-curl-073551?logo=curl)
+
+<br/>
+
+[README](../README.md) · [Spec](../CURSOR_SPEC.md) · [Error handling](#error-handling-with-curl) · [Diagram index](#diagram-gallery)
+
+</div>
+
+---
+
+These examples embed Mermaid text in the JSON body. Bash `$'...'` strings let `\n` work inline; for CI, prefer `--data-binary @payload.json`.
 
 ## Error handling with curl
 
-`POST /render` returns **either** a binary image **or** a JSON error. It never returns both in one response.
+`POST /render` returns **either** a binary image **or** a JSON error — never both.
 
-| HTTP status | `Content-Type` | Body |
-|-------------|----------------|------|
-| `200` | `image/svg+xml`, `image/png`, or `image/jpeg` | Diagram bytes |
-| `400` | `application/json` | `{ "detail": { "error": { "code": "MERMAID_PARSE_ERROR", "message": "..." } } }` |
-| `422` | `application/json` | Pydantic validation error (invalid `format`, `scale`, etc.) |
-| `504` | `application/json` | `{ "detail": { "error": { "code": "MERMAID_RENDER_TIMEOUT", ... } } }` |
+| HTTP | `Content-Type` | Body |
+|:----:|----------------|------|
+| ![200](https://img.shields.io/badge/200-brightgreen) | `image/svg+xml` · `image/png` · `image/jpeg` | Diagram bytes |
+| ![400](https://img.shields.io/badge/400-red) | `application/json` | `MERMAID_PARSE_ERROR` |
+| ![422](https://img.shields.io/badge/422-orange) | `application/json` | Pydantic validation error |
+| ![504](https://img.shields.io/badge/504-yellow) | `application/json` | `MERMAID_RENDER_TIMEOUT` |
 
 ### `curl --output` does not mean success
 
@@ -110,7 +126,33 @@ curl -s http://localhost:3000/render \
 
 The diagram examples below use `curl -s` for brevity. In scripts and CI, prefer **`curl -fS`** or **Option B** so errors are not saved as `.png` / `.svg` files.
 
+---
+
+## Diagram gallery
+
+| # | Diagram | Format | Output file |
+|:-:|---------|--------|-------------|
+| 1 | [Flowchart — render pipeline](#1-flowchart-render-pipeline-as-svg) | ![SVG](https://img.shields.io/badge/SVG-7E57C2) | `render_pipeline.svg` |
+| 2 | [Flowchart — deployment](#2-flowchart-with-subgraphs-as-png) | ![PNG](https://img.shields.io/badge/PNG-4CAF50) | `deployment_architecture.png` |
+| 3 | [ER diagram](#3-er-diagram-as-svg) | ![SVG](https://img.shields.io/badge/SVG-7E57C2) | `api_domain_model.svg` |
+| 4 | [Ishikawa / fishbone](#4-ishikawa--fishbone-as-png) | ![PNG](https://img.shields.io/badge/PNG-4CAF50) | `ishikawa_late_response.png` |
+| 5 | [Sequence](#5-sequence-diagram-as-svg) | ![SVG](https://img.shields.io/badge/SVG-7E57C2) | `render_sequence.svg` |
+| 6 | [State](#6-state-diagram-as-png) | ![PNG](https://img.shields.io/badge/PNG-4CAF50) | `render_lifecycle.png` |
+| 7 | [Class](#7-class-diagram-as-svg) | ![SVG](https://img.shields.io/badge/SVG-7E57C2) | `renderer_class_diagram.svg` |
+| 8 | [Mindmap](#8-mindmap-as-png) | ![PNG](https://img.shields.io/badge/PNG-4CAF50) | `test_strategy_mindmap.png` |
+| 9 | [Gantt](#9-gantt-diagram-as-svg) | ![SVG](https://img.shields.io/badge/SVG-7E57C2) | `roadmap_gantt.svg` |
+| 10 | [Git graph](#10-git-graph-as-svg) | ![SVG](https://img.shields.io/badge/SVG-7E57C2) | `git_graph.svg` |
+| 11 | [Large flowchart](#11-large-flowchart-stress-test-as-png) | ![PNG](https://img.shields.io/badge/PNG-4CAF50) | `large_flowchart.png` |
+| 12 | [Invalid syntax test](#12-invalid-mermaid-parse-error-test) | ![400](https://img.shields.io/badge/expect-400-red) | JSON only |
+| 13 | [Typo trap](#13-wrong-diagram-type-typo--json-saved-as-png) | ![400](https://img.shields.io/badge/expect-400-red) | JSON misnamed `.png` |
+
+---
+
 ## 1. Flowchart: Render Pipeline as SVG
+
+![flowchart](https://img.shields.io/badge/diagram-flowchart-42A5F5)
+![SVG](https://img.shields.io/badge/format-SVG-7E57C2)
+![theme](https://img.shields.io/badge/theme-default-9E9E9E)
 
 ```sh
 curl -s http://localhost:3000/render \
@@ -125,6 +167,10 @@ curl -s http://localhost:3000/render \
 ```
 
 ## 2. Flowchart With Subgraphs as PNG
+
+![flowchart](https://img.shields.io/badge/diagram-flowchart-42A5F5)
+![PNG](https://img.shields.io/badge/format-PNG-4CAF50)
+![scale](https://img.shields.io/badge/scale-2x-5C6BC0)
 
 ```sh
 curl -s http://localhost:3000/render \
@@ -143,6 +189,9 @@ curl -s http://localhost:3000/render \
 
 ## 3. ER Diagram as SVG
 
+![erDiagram](https://img.shields.io/badge/diagram-erDiagram-AB47BC)
+![SVG](https://img.shields.io/badge/format-SVG-7E57C2)
+
 ```sh
 curl -s http://localhost:3000/render \
   -H "content-type: application/json" \
@@ -157,7 +206,11 @@ curl -s http://localhost:3000/render \
 
 ## 4. Ishikawa / Fishbone as PNG
 
-Requires Mermaid `11.15.0` (pinned in this repo). The diagram type is `ishikawa-beta`.
+![ishikawa-beta](https://img.shields.io/badge/diagram-ishikawa--beta-FF3670)
+![PNG](https://img.shields.io/badge/format-PNG-4CAF50)
+![mermaid](https://img.shields.io/badge/requires-11.15.0-FF3670)
+
+Requires Mermaid `11.15.0` (pinned in this repo). First line must be exactly `ishikawa-beta`.
 
 ```sh
 curl -s http://localhost:3000/render \
@@ -176,6 +229,9 @@ curl -s http://localhost:3000/render \
 
 ## 5. Sequence Diagram as SVG
 
+![sequence](https://img.shields.io/badge/diagram-sequence-26A69A)
+![SVG](https://img.shields.io/badge/format-SVG-7E57C2)
+
 ```sh
 curl -s http://localhost:3000/render \
   -H "content-type: application/json" \
@@ -189,6 +245,10 @@ curl -s http://localhost:3000/render \
 ```
 
 ## 6. State Diagram as PNG
+
+![stateDiagram](https://img.shields.io/badge/diagram-stateDiagram--v2-66BB6A)
+![PNG](https://img.shields.io/badge/format-PNG-4CAF50)
+![theme](https://img.shields.io/badge/theme-forest-2E7D32)
 
 ```sh
 curl -s http://localhost:3000/render \
@@ -207,6 +267,9 @@ curl -s http://localhost:3000/render \
 
 ## 7. Class Diagram as SVG
 
+![classDiagram](https://img.shields.io/badge/diagram-classDiagram-5C6BC0)
+![SVG](https://img.shields.io/badge/format-SVG-7E57C2)
+
 ```sh
 curl -s http://localhost:3000/render \
   -H "content-type: application/json" \
@@ -220,6 +283,9 @@ curl -s http://localhost:3000/render \
 ```
 
 ## 8. Mindmap as PNG
+
+![mindmap](https://img.shields.io/badge/diagram-mindmap-FFA726)
+![PNG](https://img.shields.io/badge/format-PNG-4CAF50)
 
 ```sh
 curl -s http://localhost:3000/render \
@@ -238,6 +304,9 @@ curl -s http://localhost:3000/render \
 
 ## 9. Gantt Diagram as SVG
 
+![gantt](https://img.shields.io/badge/diagram-gantt-EF5350)
+![SVG](https://img.shields.io/badge/format-SVG-7E57C2)
+
 ```sh
 curl -s http://localhost:3000/render \
   -H "content-type: application/json" \
@@ -252,6 +321,9 @@ curl -s http://localhost:3000/render \
 
 ## 10. Git Graph as SVG
 
+![gitGraph](https://img.shields.io/badge/diagram-gitGraph-F4511E)
+![SVG](https://img.shields.io/badge/format-SVG-7E57C2)
+
 ```sh
 curl -s http://localhost:3000/render \
   -H "content-type: application/json" \
@@ -265,6 +337,10 @@ curl -s http://localhost:3000/render \
 ```
 
 ## 11. Large Flowchart Stress Test as PNG
+
+![flowchart](https://img.shields.io/badge/diagram-flowchart-42A5F5)
+![PNG](https://img.shields.io/badge/format-PNG-4CAF50)
+![stress](https://img.shields.io/badge/stress-24_nodes-orange)
 
 ```sh
 curl -s http://localhost:3000/render \
@@ -283,7 +359,10 @@ curl -s http://localhost:3000/render \
 
 ## 12. Invalid Mermaid Parse Error Test
 
-This should return `400` JSON with `MERMAID_PARSE_ERROR`, not an image file.
+![expect](https://img.shields.io/badge/expect-400_JSON-red)
+![MERMAID_PARSE_ERROR](https://img.shields.io/badge/code-MERMAID__PARSE__ERROR-critical)
+
+This should return ![400](https://img.shields.io/badge/HTTP-400-red) JSON with `MERMAID_PARSE_ERROR`, not an image file.
 
 ```sh
 curl -sS http://localhost:3000/render \
@@ -314,7 +393,10 @@ Do **not** pipe this directly to `--output diagram.svg` without checking status;
 
 ## 13. Wrong Diagram Type (typo) — JSON saved as `.png`
 
-A common mistake is a typo in the first line (e.g. `ishiFLOWCHART-beta` instead of `ishikawa-beta`). The API correctly returns `400` JSON, but `curl --output file.png` still writes that JSON to disk:
+![expect](https://img.shields.io/badge/expect-400_JSON-red)
+![trap](https://img.shields.io/badge/trap-fake_.png-yellow)
+
+A common mistake is a typo in the first line (e.g. `ishiFLOWCHART-beta` instead of `ishikawa-beta`). The API correctly returns ![400](https://img.shields.io/badge/HTTP-400-red) JSON, but `curl --output file.png` still writes that JSON to disk:
 
 ```sh
 # Wrong diagram header on purpose
@@ -344,3 +426,11 @@ curl -fS http://localhost:3000/render \
 ```
 
 If the render fails, `curl -f` exits non-zero and does not leave a fake `diagram.svg` containing JSON.
+
+---
+
+<div align="center">
+
+<sub>Gallery themed like <a href="../README.md">README</a> · palette in <a href="BRAND.md">docs/BRAND.md</a></sub>
+
+</div>

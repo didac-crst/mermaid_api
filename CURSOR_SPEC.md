@@ -1,10 +1,50 @@
+<div align="center">
+
 # Mermaid Render API Specification
+
+**Implementation contract** for the HTTP render service.
+
+<br/>
+
+![Python](https://img.shields.io/badge/python-3.12+-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
+![Mermaid](https://img.shields.io/badge/mermaid-11.15.0-FF3670)
+![Playwright](https://img.shields.io/badge/playwright-Chromium-2EAD33?logo=playwright&logoColor=white)
+![Docker](https://img.shields.io/badge/target-Docker-2496ED?logo=docker&logoColor=white)
+![Cloud Run](https://img.shields.io/badge/deploy-Cloud_Run-4285F4?logo=googlecloud&logoColor=white)
+
+<br/>
+
+[README](README.md) · [Curl cookbook](docs/curl-examples.md) · [Brand / theme](docs/BRAND.md)
+
+</div>
+
+---
+
+## Contents
+
+| Section | Topic |
+|---------|--------|
+| [Goal](#goal) | What we are building |
+| [Deployment](#deployment-target) | Cloud Run, access models, Apps Script alternative |
+| [Stack](#recommended-stack) | Python, FastAPI, Playwright |
+| [Mermaid engine](#mermaid-engine-source) | Pinning and install |
+| [MVP scope](#mvp-scope) | Endpoints |
+| [API contract](#api-contract) | Request/response shapes |
+| [Rendering](#rendering-behavior) | Pipeline rules |
+| [Security](#security-requirements) | Limits and hardening |
+| [Layout](#suggested-project-layout) | Repository tree |
+| [Acceptance](#acceptance-criteria) | Definition of done |
+
+---
 
 ## Goal
 
 Build a small HTTP API that receives Mermaid syntax text, renders it with the vendored Mermaid engine, and returns an image.
 
 The repository can contain a local Mermaid runtime under `vendor/mermaid/` for development, but the preferred setup is to install a pinned Mermaid version during setup/build.
+
+> **Note** — User-facing guides live in [README.md](README.md). This file is the engineering spec.
 
 ## Deployment Target
 
@@ -133,17 +173,43 @@ The current vendored `vendor/mermaid/` directory can be used as a local referenc
 
 ## MVP Scope
 
-Create a service with:
-
-- `GET /health`
-- `POST /render`
-- `POST /validate`
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /health` | Liveness + engine version |
+| `POST /validate` | Syntax check (JSON only) |
+| `POST /render` | Image output |
 
 No authentication is required for the first version.
 
 ## API Contract
 
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {
+  'primaryColor': '#009688',
+  'secondaryColor': '#FF3670',
+  'lineColor': '#5C6BC0'
+}}}%%
+sequenceDiagram
+  participant C as Client
+  participant A as API
+  participant R as Renderer
+
+  C->>A: POST /render {code, format}
+  A->>R: parse + render
+  alt success
+    R-->>A: SVG / raster bytes
+    A-->>C: 200 image/*
+  else parse / render error
+    R-->>A: error message
+    A-->>C: 400 JSON detail.error
+  else timeout
+    A-->>C: 504 JSON detail.error
+  end
+```
+
 ### `GET /health`
+
+![HTTP 200](https://img.shields.io/badge/response-200_JSON-brightgreen)
 
 Returns:
 
@@ -157,6 +223,9 @@ Returns:
 
 ### `POST /validate`
 
+![HTTP 200](https://img.shields.io/badge/success-200_JSON-brightgreen)
+![HTTP 400](https://img.shields.io/badge/failure-400_JSON-red)
+
 Request:
 
 ```json
@@ -165,7 +234,7 @@ Request:
 }
 ```
 
-Response `200`:
+Response ![200](https://img.shields.io/badge/HTTP-200-brightgreen):
 
 ```json
 {
@@ -174,7 +243,7 @@ Response `200`:
 }
 ```
 
-Response `400`:
+Response ![400](https://img.shields.io/badge/HTTP-400-red):
 
 ```json
 {
@@ -187,6 +256,10 @@ Response `400`:
 ```
 
 ### `POST /render`
+
+![HTTP 200](https://img.shields.io/badge/success-200_image-brightgreen)
+![HTTP 400](https://img.shields.io/badge/error-400_JSON-red)
+![HTTP 504](https://img.shields.io/badge/timeout-504_JSON-yellow)
 
 Request:
 
@@ -216,9 +289,11 @@ Fields:
 
 Response:
 
-- `200 image/svg+xml` for `format=svg`
-- `200 image/png` for `format=png`
-- `200 image/jpeg` for `format=jpg` or `format=jpeg`
+| Format | Status | `Content-Type` |
+|--------|--------|----------------|
+| `svg` | ![200](https://img.shields.io/badge/HTTP-200-brightgreen) | `image/svg+xml` |
+| `png` | ![200](https://img.shields.io/badge/HTTP-200-brightgreen) | `image/png` |
+| `jpg` / `jpeg` | ![200](https://img.shields.io/badge/HTTP-200-brightgreen) | `image/jpeg` |
 
 Headers:
 
@@ -265,6 +340,8 @@ The page should:
 Avoid exposing the API server filesystem beyond the Mermaid bundle needed by the render page.
 
 ## Security Requirements
+
+> **Warning** — These are mandatory for MVP, not optional hardening.
 
 - Default Mermaid `securityLevel` must be `strict`.
 - Do not allow client-provided arbitrary Mermaid config in MVP.
@@ -319,44 +396,34 @@ Avoid exposing the API server filesystem beyond the Mermaid bundle needed by the
 
 ## Acceptance Criteria
 
-- `npm run dev` starts the API locally.
-- `GET /health` returns `200`.
-- `POST /validate` returns valid diagram metadata for a correct diagram.
-- `POST /validate` returns `400` for invalid Mermaid syntax.
-- `POST /render` returns non-empty SVG for `format=svg`.
-- `POST /render` returns non-empty PNG for `format=png`.
-- `POST /render` returns non-empty JPEG for `format=jpg`.
-- `transparent=true` is honored for PNG and SVG.
-- JPEG requests use an opaque background even when `transparent=true`.
-- Invalid options return `400` with JSON errors.
-- Render timeouts return `504`.
+| Criterion | Status |
+|-----------|--------|
+| `npm run dev` starts the API locally | ![done](https://img.shields.io/badge/done-brightgreen) |
+| `GET /health` returns ![200](https://img.shields.io/badge/200-brightgreen) | ![done](https://img.shields.io/badge/done-brightgreen) |
+| `POST /validate` valid diagram metadata | ![done](https://img.shields.io/badge/done-brightgreen) |
+| `POST /validate` ![400](https://img.shields.io/badge/400-red) for invalid syntax | ![done](https://img.shields.io/badge/done-brightgreen) |
+| `POST /render` non-empty SVG / PNG / JPEG | ![done](https://img.shields.io/badge/done-brightgreen) |
+| `transparent=true` for PNG and SVG | ![done](https://img.shields.io/badge/done-brightgreen) |
+| JPEG always opaque background | ![done](https://img.shields.io/badge/done-brightgreen) |
+| Invalid options → JSON errors | ![done](https://img.shields.io/badge/done-brightgreen) |
+| Render timeouts → ![504](https://img.shields.io/badge/504-yellow) | ![done](https://img.shields.io/badge/done-brightgreen) |
+| Error diagrams → JSON, not image bytes | ![done](https://img.shields.io/badge/done-brightgreen) |
 
 ## Curl Examples
 
-Validate:
+See **[docs/curl-examples.md](docs/curl-examples.md)** for the full gallery, error-handling guide, and diagram-type coverage.
+
+Quick samples (use `curl -fS` in automation):
 
 ```sh
 curl -s http://localhost:3000/validate \
   -H 'content-type: application/json' \
   -d '{"code":"flowchart TD\nA-->B"}'
-```
 
-Render PNG:
-
-```sh
-curl -s http://localhost:3000/render \
+curl -fS http://localhost:3000/render \
   -H 'content-type: application/json' \
   -d '{"code":"flowchart TD\nA-->B","format":"png","background":"white"}' \
   --output diagram.png
-```
-
-Render SVG:
-
-```sh
-curl -s http://localhost:3000/render \
-  -H 'content-type: application/json' \
-  -d '{"code":"flowchart TD\nA-->B","format":"svg","transparent":true}' \
-  --output diagram.svg
 ```
 
 ## Open Questions
@@ -365,3 +432,11 @@ curl -s http://localhost:3000/render \
 - Should rendered images be cacheable by hash of request body?
 - Should user-provided Mermaid config be allowed in a later version?
 - Should the service provide a Docker image as part of the first deliverable?
+
+---
+
+<div align="center">
+
+<sub>Spec version tracks Mermaid <code>11.15.0</code> · themed docs: <a href="docs/BRAND.md">docs/BRAND.md</a></sub>
+
+</div>
