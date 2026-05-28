@@ -1,0 +1,49 @@
+# OS/editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+
+# Node/build tooling used only to fetch or bundle Mermaid
+node_modules/
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Browser/runtime artifacts
+playwright-report/
+test-results/
+.cache/
+
+# Local Mermaid engine artifacts
+vendor/
+mermaid-*.tgz
+
+# Generated renders
+output/
+renders/
+*.png
+*.jpg
+*.jpeg
+*.svg
+
