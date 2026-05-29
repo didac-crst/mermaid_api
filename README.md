@@ -128,7 +128,7 @@ curl -fS http://localhost:3000/render \
 | Method | Path | Success (`200`) | Failure |
 |:------:|:-----|-----------------|---------|
 | `GET` | `/health` | JSON — status + engine version | — |
-| `POST` | `/validate` | JSON — `valid`, `diagramType` | `400` parse error |
+| `POST` | `/validate` | JSON — `valid`, `diagramType` | `400` with `valid: false` + `error` (optional input preview via header) |
 | `POST` | `/render` | Binary image (`image/png`, …) | `400` · `422` · `504` |
 
 <details>
@@ -148,7 +148,7 @@ curl -fS http://localhost:3000/render \
 </details>
 
 <details>
-<summary><strong>Error JSON shape</strong></summary>
+<summary><strong>Error JSON shape (/render and internal failures)</strong></summary>
 
 ```json
 {
@@ -182,6 +182,25 @@ curl -s http://localhost:3000/validate \
   -H "content-type: application/json" \
   -d '{"code":"flowchart TD\nA-->B"}' | jq .
 ```
+
+Invalid validate example:
+
+```json
+{
+  "valid": false,
+  "error": {
+    "code": "MERMAID_PARSE_ERROR",
+    "message": "Human-readable parse error"
+  }
+}
+```
+
+Optional debug echo for trusted callers:
+
+- Send header: `X-Include-Input: true`
+- Error responses add:
+  - `originalSyntaxPreview` (max 2048 chars)
+  - `originalSyntaxTruncated` (`true` when preview was clipped)
 
 ### Render PNG
 

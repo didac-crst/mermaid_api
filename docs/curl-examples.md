@@ -115,6 +115,20 @@ curl -s http://localhost:3000/validate \
 # If "valid": true, call /render with the same code (using -f or status check above).
 ```
 
+To include an input preview in `400` responses (for trusted internal debugging), add:
+
+```sh
+curl -s http://localhost:3000/validate \
+  -H "content-type: application/json" \
+  -H "X-Include-Input: true" \
+  -d '{"code":"classDiagram TD\nA-->B"}' | jq .
+```
+
+When enabled, parse errors include:
+
+- `originalSyntaxPreview` (max 2048 chars)
+- `originalSyntaxTruncated` (boolean)
+
 ### Parse error JSON with `jq`
 
 ```sh
