@@ -1,0 +1,10 @@
+{
+  "name": "mermaid-render-api",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "python -m uvicorn src.main:app --host 0.0.0.0 --port 3000 --reload",
+    "test": "pytest -q",
+    "test:e2e": "pytest -q -m e2e"
+  }
+}
