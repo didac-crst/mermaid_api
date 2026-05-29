@@ -8,7 +8,7 @@ TARGET_DIR="${ROOT_DIR}/vendor/mermaid"
 rm -rf "${TARGET_DIR}"
 mkdir -p "${TARGET_DIR}"
 
-npm install --no-save "mermaid@${MERMAID_VERSION}"
+npm install --prefix "${ROOT_DIR}" --no-save "mermaid@${MERMAID_VERSION}"
 cp -R "${ROOT_DIR}/node_modules/mermaid/dist" "${TARGET_DIR}/dist"
 
 echo "Installed Mermaid ${MERMAID_VERSION} to ${TARGET_DIR}/dist"

@@ -63,6 +63,41 @@ async ({ code }) => {
 }
 """
 
+_APPLY_BACKGROUND_JS = """
+({ background, transparent, format }) => {
+  const container = document.getElementById("diagram");
+  const svg = container.querySelector("svg");
+  if (!svg) {
+    return;
+  }
+
+  const rasterFormat = format === "png" || format === "jpg" || format === "jpeg";
+  const transparentRaster = transparent && format === "png";
+
+  if (rasterFormat) {
+    const pageBackground = transparentRaster ? "transparent" : background;
+    document.body.style.background = pageBackground;
+    document.documentElement.style.background = pageBackground;
+    container.style.background = pageBackground;
+    return;
+  }
+
+  if (format !== "svg" || transparent || background === "transparent") {
+    return;
+  }
+
+  const svgNamespace = "http://www.w3.org/2000/svg";
+  const rect = document.createElementNS(svgNamespace, "rect");
+  const bbox = svg.getBBox();
+  rect.setAttribute("x", String(bbox.x));
+  rect.setAttribute("y", String(bbox.y));
+  rect.setAttribute("width", String(bbox.width));
+  rect.setAttribute("height", String(bbox.height));
+  rect.setAttribute("fill", background);
+  svg.insertBefore(rect, svg.firstChild);
+}
+"""
+
 
 def _raise_on_browser_error(result: dict) -> None:
     """Map browser-side render failures to API parse errors."""
@@ -116,8 +151,20 @@ class MermaidRenderer:
             rendered = await page.evaluate(_RENDER_DIAGRAM_JS, {"code": request.code})
             _raise_on_browser_error(rendered)
 
+            await page.evaluate(
+                _APPLY_BACKGROUND_JS,
+                {
+                    "background": request.background,
+                    "transparent": request.transparent,
+                    "format": request.format,
+                },
+            )
+
             if request.format == "svg":
-                return rendered["svg"].encode("utf-8"), "image/svg+xml"
+                svg_markup = await page.evaluate(
+                    "() => document.getElementById('diagram').innerHTML"
+                )
+                return svg_markup.encode("utf-8"), "image/svg+xml"
 
             element = page.locator("#diagram svg")
             screenshot = await element.screenshot(

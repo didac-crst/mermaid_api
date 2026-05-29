@@ -39,6 +39,9 @@ test-results/
 vendor/
 mermaid-*.tgz
 
+# Local working notes (not product docs)
+docs/repo-assessment.md
+
 # Generated renders
 output/
 renders/

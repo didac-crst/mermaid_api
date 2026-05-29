@@ -247,10 +247,11 @@ Response ![400](https://img.shields.io/badge/HTTP-400-red):
 
 ```json
 {
-  "valid": false,
-  "error": {
-    "code": "MERMAID_PARSE_ERROR",
-    "message": "Human readable parse error"
+  "detail": {
+    "error": {
+      "code": "MERMAID_PARSE_ERROR",
+      "message": "Human readable parse error"
+    }
   }
 }
 ```
@@ -301,13 +302,15 @@ Headers:
 - `Content-Length`
 - `Cache-Control: no-store`
 
-Error responses are JSON:
+Error responses are JSON (FastAPI wraps them in `detail`):
 
 ```json
 {
-  "error": {
-    "code": "MERMAID_PARSE_ERROR",
-    "message": "Human readable error"
+  "detail": {
+    "error": {
+      "code": "MERMAID_PARSE_ERROR",
+      "message": "Human readable error"
+    }
   }
 }
 ```
@@ -323,6 +326,7 @@ Error responses are JSON:
 7. For `jpg/jpeg`, always use an opaque background because JPEG does not support transparency.
 8. For `png` with `transparent=true`, preserve transparency.
 9. Reject Mermaid "error diagram" SVG output (`.error-icon` / `.error-text`) with `400` JSON instead of returning it as a successful image.
+10. Apply `background` before raster screenshots; for opaque `svg`, prepend a background `<rect>` inside the SVG (transparent `svg` returns diagram only).
 
 ## Render Page Design
 

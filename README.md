@@ -259,6 +259,8 @@ Project layout: `src/routes/` · `src/render/` · `src/validation/` · `tests/` 
 
 Rebuild after changing `MERMAID_VERSION` or re-running `./scripts/install_mermaid.sh` — the image bundles its own `vendor/mermaid/dist`.
 
+The production image installs **runtime dependencies only** (no test/lint extras) and runs as the unprivileged **`app`** user.
+
 ```sh
 docker build -t mermaid-render-api .
 docker run --rm -p 3000:3000 mermaid-render-api

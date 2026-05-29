@@ -69,6 +69,22 @@ def test_render_invalid_syntax_png_returns_json_error(e2e_client: TestClient):
     assert response.json()["detail"]["error"]["code"] == "MERMAID_PARSE_ERROR"
 
 
+def test_render_svg_opaque_background_includes_rect(e2e_client: TestClient):
+    response = e2e_client.post(
+        "/render",
+        json={
+            "code": VALID_FLOWCHART,
+            "format": "svg",
+            "background": "#ff0000",
+            "transparent": False,
+        },
+    )
+
+    assert response.status_code == 200
+    assert b"<rect" in response.content
+    assert b"ff0000" in response.content
+
+
 def test_render_valid_flowchart_returns_svg(e2e_client: TestClient):
     response = e2e_client.post(
         "/render",

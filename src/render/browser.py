@@ -20,8 +20,15 @@ class BrowserManager:
             if self._browser:
                 return self._browser
 
-            self._playwright = await async_playwright().start()
-            self._browser = await self._playwright.chromium.launch(headless=True)
+            playwright = await async_playwright().start()
+            try:
+                browser = await playwright.chromium.launch(headless=True)
+            except Exception:
+                await playwright.stop()
+                raise
+
+            self._playwright = playwright
+            self._browser = browser
             return self._browser
 
     async def close(self) -> None:
