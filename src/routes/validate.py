@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Response
 from fastapi.responses import JSONResponse
 
 from src.response.errors import MermaidParseError
@@ -8,8 +8,8 @@ router = APIRouter()
 MAX_VALIDATE_INPUT_PREVIEW_CHARS = 2048
 
 
-@router.post("/validate")
-async def validate(payload: ValidateRequest, request: Request) -> dict:
+@router.post("/validate", response_model=None)
+async def validate(payload: ValidateRequest, request: Request) -> dict[str, object] | Response:
     """Check Mermaid syntax and return diagram metadata without rendering."""
     result = await request.app.state.renderer.validate(payload.code)
     if result.get("valid"):
