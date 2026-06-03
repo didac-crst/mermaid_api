@@ -247,14 +247,20 @@ Response ![400](https://img.shields.io/badge/HTTP-400-red):
 
 ```json
 {
-  "detail": {
-    "error": {
-      "code": "MERMAID_PARSE_ERROR",
-      "message": "Human readable parse error"
-    }
+  "valid": false,
+  "error": {
+    "code": "MERMAID_PARSE_ERROR",
+    "message": "Human readable parse error"
   }
 }
 ```
+
+Optional debug echo for trusted callers:
+
+- Request header: `X-Include-Input: true`
+- Additional fields on `400`:
+  - `originalSyntaxPreview` (up to 2048 characters)
+  - `originalSyntaxTruncated` (`true` when preview is truncated)
 
 ### `POST /render`
 
